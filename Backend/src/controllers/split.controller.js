@@ -1,5 +1,8 @@
 import SplitModel from "../models/split.model.js";
 
+// =========================
+// CREATE SPLIT
+// =========================
 
 export const createSplitController = async (
   req,
@@ -60,6 +63,10 @@ export const createSplitController = async (
     });
   }
 };
+
+// =========================
+// GET SPLITS
+// =========================
 
 export const getSplitsController = async (
   req,

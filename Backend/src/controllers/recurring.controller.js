@@ -1,5 +1,9 @@
 import RecurringModel from "../models/recurring.model.js";
 
+// =========================
+// CREATE RECURRING EXPENSE
+// =========================
+
 export const createRecurringController = async (req, res) => {
   try {
     const {
@@ -50,6 +54,9 @@ export const createRecurringController = async (req, res) => {
   }
 };
 
+// =========================
+// GET RECURRING EXPENSES
+// =========================
 
 export const getRecurringController = async (req, res) => {
   try {
@@ -70,6 +77,10 @@ export const getRecurringController = async (req, res) => {
     });
   }
 };
+
+// =========================
+// DELETE RECURRING EXPENSE
+// =========================
 
 export const deleteRecurringController = async (req, res) => {
   try {

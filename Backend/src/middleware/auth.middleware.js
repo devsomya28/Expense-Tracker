@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 const authMiddleware = (req, res, next) => {
   try {
+    // Get token from cookie
     const token = req.cookies.token;
 
     if (!token) {
@@ -17,7 +18,12 @@ const authMiddleware = (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    req.user = decoded;
+    // Store user information in request.
+    // The token is signed with { userId }, but a number of newer
+    // controllers/services (goal, intelligence, forecast, scenario,
+    // insight, subscription, entitlement middleware) expect req.user._id.
+    // Expose both shapes so either convention works.
+    req.user = { ...decoded, _id: decoded.userId };
 
     next();
   } catch (error) {
@@ -29,5 +35,10 @@ const authMiddleware = (req, res, next) => {
     });
   }
 };
+
+// Named export alias - some routes (ai, forecast, goal, insight,
+// intelligence, scenario, subscription) import `{ protect }` instead of
+// the default export. Same implementation, different name.
+export const protect = authMiddleware;
 
 export default authMiddleware;

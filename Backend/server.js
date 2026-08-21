@@ -4,6 +4,7 @@ dotenv.config();
 
 import app from "./src/app.js";
 import "./src/jobs/recurring-expense.job.js";
+import { startInsightGeneratorJob } from "./src/jobs/insight-generator.job.js";
 import connectDB from "./src/config/db.js";
 
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,8 @@ const PORT = process.env.PORT || 3000;
 const startServer = async () => {
   try {
     await connectDB();
+
+    startInsightGeneratorJob();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

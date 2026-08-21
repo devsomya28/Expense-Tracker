@@ -1,8 +1,8 @@
 import ExpenseModel from "../models/expense.model.js";
 
-
+// =========================
 // ADD EXPENSE
-
+// =========================
 
 export const addExpenseController = async (req, res) => {
   try {
@@ -52,6 +52,19 @@ export const addExpenseController = async (req, res) => {
   }
 };
 
+// =========================
+// GET ALL EXPENSES
+// =========================
+
+// =========================
+// GET ALL EXPENSES
+// FILTER + PAGINATION
+// =========================
+
+// =========================
+// GET ALL EXPENSES
+// FILTER + DATE RANGE + PAGINATION
+// =========================
 
 export const getAllExpensesController = async (req, res) => {
   try {
@@ -76,17 +89,25 @@ export const getAllExpensesController = async (req, res) => {
       user: req.user.userId,
     };
 
-
+    // =========================
+    // CATEGORY FILTER
+    // =========================
 
     if (category) {
       filter.category = category;
     }
 
+    // =========================
+    // PAYMENT METHOD FILTER
+    // =========================
 
     if (paymentMethod) {
       filter.paymentMethod = paymentMethod;
     }
 
+    // =========================
+    // SINGLE DATE FILTER
+    // =========================
 
     if (date) {
       const start = new Date(date);
@@ -100,6 +121,9 @@ export const getAllExpensesController = async (req, res) => {
       };
     }
 
+    // =========================
+    // DATE RANGE FILTER
+    // =========================
 
     if (startDate || endDate) {
       filter.date = {};
@@ -111,20 +135,31 @@ export const getAllExpensesController = async (req, res) => {
       if (endDate) {
         const end = new Date(endDate);
 
-
+        // Include the entire end date
         end.setDate(end.getDate() + 1);
 
         filter.date.$lt = end;
       }
     }
 
+    // =========================
+    // TOTAL EXPENSES
+    // =========================
+
     const totalExpenses = await ExpenseModel.countDocuments(filter);
+
+    // =========================
+    // GET EXPENSES
+    // =========================
 
     const expenses = await ExpenseModel.find(filter)
       .sort({ date: -1 })
       .skip(skip)
       .limit(itemsPerPage);
 
+    // =========================
+    // PAGINATION
+    // =========================
 
     const totalPages = Math.ceil(
       totalExpenses / itemsPerPage
@@ -162,6 +197,9 @@ export const getAllExpensesController = async (req, res) => {
   }
 };
 
+// =========================
+// GET SINGLE EXPENSE
+// =========================
 
 export const getSingleExpenseController = async (req, res) => {
   try {
@@ -193,6 +231,9 @@ export const getSingleExpenseController = async (req, res) => {
   }
 };
 
+// =========================
+// EDIT EXPENSE
+// =========================
 
 export const editExpenseController = async (req, res) => {
   try {
@@ -218,6 +259,7 @@ export const editExpenseController = async (req, res) => {
       });
     }
 
+    // Update only provided fields
     if (amount !== undefined) expense.amount = amount;
     if (title !== undefined) expense.title = title;
     if (category !== undefined) expense.category = category;
@@ -243,6 +285,9 @@ export const editExpenseController = async (req, res) => {
   }
 };
 
+// =========================
+// DELETE EXPENSE
+// =========================
 
 export const deleteExpenseController = async (req, res) => {
   try {

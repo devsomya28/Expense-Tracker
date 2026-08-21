@@ -1,159 +1,57 @@
-import ExpenseModel from "../../models/expense.model.js";
-import IncomeModel from "../../models/income.model.js";
-import BudgetModel from "../../models/budget.model.js";
-import RecurringModel from "../../models/recurring.model.js";
+import { getFinancialIntelligence } from '../../services/financial-intelligence.service.js';
+import { getUserGoals } from '../../services/goal.service.js';
 
-export const getFinancialContext = async (userId) => {
-  const now = new Date();
+export const buildFinancialContext = async (userId) => {
+  try {
+    // 1. Fetch pre-calculated deterministic facts
+    const intelligence = await getFinancialIntelligence(userId);
+    const goals = await getUserGoals(userId); // Fetch deterministic goals
+    const activeGoals = goals.filter(g => g.status === 'ACTIVE');
 
-  const currentMonthStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1
-  );
+    // 2. Format context for the LLM
+    let context = `Financial Context for ${intelligence.period.month} ${intelligence.period.year}:\n`;
+    context += `--- SUMMARY ---\n`;
+    context += `- Income: $${intelligence.income.current}\n`;
+    context += `- Expenses: $${intelligence.expenses.current}\n`;
+    context += `- Savings: $${intelligence.savings.amount} (Rate: ${intelligence.savings.rate}%)\n`;
+    context += `- Expense-to-Income Ratio: ${intelligence.trends.expenseToIncomeRatio}%\n`;
+    context += `- Month-over-Month Spending Change: ${intelligence.trends.expenseMomChangePercentage}%\n\n`;
 
-  const currentMonthEnd = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    1
-  );
+    context += `--- BUDGET ---\n`;
+    context += `- Total Budget: $${intelligence.budget.total}\n`;
+    context += `- Budget Utilization: ${intelligence.budget.utilizationPercentage}%\n`;
+    context += `- Remaining Budget: $${intelligence.budget.remaining}\n`;
+    context += `- Safe Daily Allowance Remaining: $${intelligence.budget.remainingDailyAllowance}\n\n`;
 
-  const previousMonthStart = new Date(
-    now.getFullYear(),
-    now.getMonth() - 1,
-    1
-  );
+    context += `--- RISKS & ANOMALIES ---\n`;
+    context += `\n--- FINANCIAL GOALS ---\n`;
+    if (intelligence.riskIndicators.length > 0) {
+      intelligence.riskIndicators.forEach(risk => context += `- WARNING: ${risk}\n`);
+    } else {
+      context += `- No immediate financial risks detected.\n`;
+    }
 
-  const previousMonthEnd = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1
-  );
+    context += `\n--- CATEGORY BREAKDOWN ---\n`;
+    for (const [cat, pct] of Object.entries(intelligence.categories.percentages)) {
+      context += `- ${cat}: ${pct}% of total spending\n`;
+    }
 
-  const [
-    currentExpenses,
-    previousExpenses,
-    income,
-    budget,
-    recurringExpenses,
-  ] = await Promise.all([
-    ExpenseModel.find({
-      user: userId,
-      date: {
-        $gte: currentMonthStart,
-        $lt: currentMonthEnd,
-      },
-    }).lean(),
+    if (activeGoals.length > 0) {
+      activeGoals.forEach(g => {
+        context += `- Goal: "${g.name}" ($${g.currentAmount} / $${g.targetAmount} saved)\n`;
+        context += `  Progress: ${g.metrics.progressPercentage}% | Target Date: ${new Date(g.targetDate).toISOString().split('T')[0]}\n`;
+        context += `  Status: ${g.metrics.onTrack ? 'ON TRACK' : 'FALLING BEHIND'}. Required Monthly: $${g.metrics.requiredMonthlyContribution}, Current Monthly: $${g.monthlyContribution}\n`;
+        if (g.metrics.projectedCompletionDate) {
+          context += `  Projected Completion: ${new Date(g.metrics.projectedCompletionDate).toISOString().split('T')[0]}\n`;
+        }
+      });
+    } else {
+      context += `- No active financial goals set.\n`;
+    }
 
-    ExpenseModel.find({
-      user: userId,
-      date: {
-        $gte: previousMonthStart,
-        $lt: previousMonthEnd,
-      },
-    }).lean(),
-
-    IncomeModel.find({
-      user: userId,
-      date: {
-        $gte: currentMonthStart,
-        $lt: currentMonthEnd,
-      },
-    }).lean(),
-
-    BudgetModel.findOne({
-      user: userId,
-    }).lean(),
-
-    RecurringModel.find({
-      user: userId,
-      isActive: true,
-    }).lean(),
-  ]);
-
-  const currentTotal = currentExpenses.reduce(
-    (total, expense) => total + expense.amount,
-    0
-  );
-
-  const previousTotal = previousExpenses.reduce(
-    (total, expense) => total + expense.amount,
-    0
-  );
-
-  const totalIncome = income.reduce(
-    (total, item) => total + item.amount,
-    0
-  );
-
-  const categorySpending = {};
-
-  for (const expense of currentExpenses) {
-    categorySpending[expense.category] =
-      (categorySpending[expense.category] || 0) +
-      expense.amount;
+    return context;
+  } catch (error) {
+    console.error("Context Generation Error:", error);
+    return "Error retrieving financial context.";
   }
-
-  const spendingChange =
-    previousTotal > 0
-      ? ((currentTotal - previousTotal) /
-          previousTotal) *
-        100
-      : null;
-
-  return {
-    period: {
-      currentMonth: currentMonthStart.toISOString(),
-      previousMonth: previousMonthStart.toISOString(),
-    },
-
-    currentMonth: {
-      totalExpenses: currentTotal,
-      transactionCount: currentExpenses.length,
-      categorySpending,
-    },
-
-    previousMonth: {
-      totalExpenses: previousTotal,
-      transactionCount: previousExpenses.length,
-    },
-
-    spendingChange:
-      spendingChange !== null
-        ? Number(spendingChange.toFixed(2))
-        : null,
-
-    income: {
-      total: totalIncome,
-    },
-
-    savings: {
-      amount: totalIncome - currentTotal,
-    },
-
-    budget: {
-      monthlyBudget: budget?.monthlyBudget || 0,
-      remaining:
-        (budget?.monthlyBudget || 0) - currentTotal,
-    },
-
-    recurringExpenses: recurringExpenses.map(
-      (item) => ({
-        title: item.title,
-        amount: item.amount,
-        frequency: item.frequency,
-        category: item.category,
-      })
-    ),
-
-    expenses: currentExpenses.map(
-      (expense) => ({
-        title: expense.title,
-        amount: expense.amount,
-        category: expense.category,
-        date: expense.date,
-        paymentMethod: expense.paymentMethod,
-      })
-    ),
-  };
 };

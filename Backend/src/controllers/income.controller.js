@@ -1,5 +1,6 @@
 import IncomeModel from "../models/income.model.js";
 
+// ADD INCOME
 export const addIncomeController = async (req, res) => {
   try {
     const {
@@ -41,7 +42,7 @@ export const addIncomeController = async (req, res) => {
   }
 };
 
-
+// GET ALL INCOME
 export const getIncomeController = async (req, res) => {
   try {
     const income = await IncomeModel.find({

@@ -2,17 +2,15 @@ import ExpenseModel from "../models/expense.model.js";
 import IncomeModel from "../models/income.model.js";
 import BudgetModel from "../models/budget.model.js";
 import RecurringModel from "../models/recurring.model.js";
+import { answerFinancialQuestion } from '../ai/services/financial-question.service.js';
+import { parseExpenseText } from '../ai/services/expense-parser.service.js';
 
 import {
   analyzeSpending,
 } from "../ai/services/spending-analysis.service.js";
 
 import {
-  askFinancialQuestion,
-} from "../ai/services/financial-question.service.js";
-
-import {
-  getFinancialContext,
+  buildFinancialContext as getFinancialContext,
 } from "../ai/services/financial-context.service.js";
 
 
@@ -236,14 +234,15 @@ export const askFinancialQuestionController = async (
       });
     }
 
-    // Get ONLY this user's financial data
-    const financialData =
-      await getFinancialContext(userId);
+    // Get ONLY this user's financial data (kept for parity with
+    // askQuestion's context-gathering; answerFinancialQuestion gathers
+    // its own data internally)
+    await getFinancialContext(userId);
 
     // Ask AI
-    const answer = await askFinancialQuestion(
-      trimmedQuestion,
-      financialData
+    const answer = await answerFinancialQuestion(
+      userId,
+      trimmedQuestion
     );
 
     return res.status(200).json({
@@ -262,5 +261,29 @@ export const askFinancialQuestionController = async (
       message:
         "Unable to answer financial question",
     });
+  }
+};
+
+export const askQuestion = async (req, res) => {
+  try {
+    const { question } = req.body;
+    if (!question) return res.status(400).json({ success: false, message: "Question is required" });
+
+    const response = await answerFinancialQuestion(req.user._id, question);
+    res.status(200).json({ success: true, response });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to process question" });
+  }
+};
+
+export const parseExpense = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ success: false, message: "Text is required" });
+
+    const parsedData = await parseExpenseText(text);
+    res.status(200).json({ success: true, parsedData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to parse text" });
   }
 };

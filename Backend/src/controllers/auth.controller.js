@@ -2,7 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/user.model.js";
 
-
+// Frontend and backend are served from the same origin (Express serves the
+// built frontend directly), so SameSite=Lax is enough - no need for
+// SameSite=None, which would require Secure and only matters cross-site.
+// `secure` still toggles on NODE_ENV so plain-http local dev keeps working.
 const isProd = process.env.NODE_ENV === "production";
 const authCookieOptions = {
   httpOnly: true,
@@ -11,12 +14,14 @@ const authCookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, matches JWT expiresIn
 };
 
-
+// =========================
 // REGISTER
+// =========================
 export const registerController = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Validate input
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -24,10 +29,10 @@ export const registerController = async (req, res) => {
       });
     }
 
-
+    // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-
+    // Check if user already exists
     const existingUser = await UserModel.findOne({
       email: normalizedEmail,
     });
@@ -39,17 +44,17 @@ export const registerController = async (req, res) => {
       });
     }
 
-  
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-  
+    // Create user
     const user = await UserModel.create({
       username: username.trim(),
       email: normalizedEmail,
       password: hashedPassword,
     });
 
-
+    // Create JWT
     const token = jwt.sign(
       {
         userId: user._id,
@@ -60,7 +65,7 @@ export const registerController = async (req, res) => {
       }
     );
 
-
+    // Store JWT in HTTP-only cookie
     res.cookie("token", token, authCookieOptions);
 
     return res.status(201).json({
@@ -82,14 +87,14 @@ export const registerController = async (req, res) => {
   }
 };
 
-
+// =========================
 // LOGIN
-
+// =========================
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-   
+    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -97,9 +102,10 @@ export const loginController = async (req, res) => {
       });
     }
 
+    // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-
+    // Find user
     const user = await UserModel.findOne({
       email: normalizedEmail,
     });
@@ -111,7 +117,7 @@ export const loginController = async (req, res) => {
       });
     }
 
-   
+    // Compare password with hashed password
     const isPasswordValid = await bcrypt.compare(
       password,
       user.password
@@ -135,7 +141,7 @@ export const loginController = async (req, res) => {
       }
     );
 
-   
+    // Store JWT in HTTP-only cookie
     res.cookie("token", token, authCookieOptions);
 
     return res.status(200).json({
@@ -203,11 +209,12 @@ export const getMeController = async (req, res) => {
   }
 };
 
-
+// =========================
 // LOGOUT
-
+// =========================
 export const logoutController = async (req, res) => {
- 
+  // Clear options must mirror the cookie's set options (httpOnly/secure/
+  // sameSite) or some browsers won't remove it.
   res.clearCookie("token", {
     httpOnly: authCookieOptions.httpOnly,
     secure: authCookieOptions.secure,

@@ -1,14 +1,17 @@
 import ExpenseModel from "../models/expense.model.js";
 import BudgetModel from "../models/budget.model.js";
 
+// =========================
 // FINANCIAL ANALYTICS
-
+// =========================
 
 export const getFinancialAnalyticsController = async (req, res) => {
   try {
     const userId = req.user.userId;
 
+    // =========================
     // DATE SETUP
+    // =========================
 
     const now = new Date();
 
@@ -42,7 +45,9 @@ export const getFinancialAnalyticsController = async (req, res) => {
       weekEnd.getDate() + 7
     );
 
+    // =========================
     // MONTHLY EXPENSES
+    // =========================
 
     const monthlyExpenses = await ExpenseModel.find({
       user: userId,
@@ -52,14 +57,18 @@ export const getFinancialAnalyticsController = async (req, res) => {
       },
     });
 
+    // =========================
     // MONTHLY TOTAL
+    // =========================
 
     const monthlyTotal = monthlyExpenses.reduce(
       (total, expense) => total + expense.amount,
       0
     );
 
+    // =========================
     // WEEKLY EXPENSES
+    // =========================
 
     const weeklyExpenses = await ExpenseModel.find({
       user: userId,
@@ -74,7 +83,9 @@ export const getFinancialAnalyticsController = async (req, res) => {
       0
     );
 
+    // =========================
     // CATEGORY-WISE SPENDING
+    // =========================
 
     const categorySpending = await ExpenseModel.aggregate([
       {
@@ -103,7 +114,9 @@ export const getFinancialAnalyticsController = async (req, res) => {
       },
     ]);
 
+    // =========================
     // HIGHEST EXPENSE
+    // =========================
 
     const highestExpense = await ExpenseModel.findOne({
       user: userId,
@@ -115,14 +128,18 @@ export const getFinancialAnalyticsController = async (req, res) => {
       amount: -1,
     });
 
+    // =========================
     // AVERAGE EXPENSE
+    // =========================
 
     const averageExpense =
       monthlyExpenses.length > 0
         ? monthlyTotal / monthlyExpenses.length
         : 0;
 
+    // =========================
     // DAILY SPENDING
+    // =========================
 
     const dailySpending = await ExpenseModel.aggregate([
       {
@@ -157,7 +174,9 @@ export const getFinancialAnalyticsController = async (req, res) => {
       },
     ]);
 
+    // =========================
     // MONTHLY BUDGET
+    // =========================
 
     const budget = await BudgetModel.findOne({
       user: userId,
@@ -167,12 +186,16 @@ export const getFinancialAnalyticsController = async (req, res) => {
       ? budget.monthlyBudget
       : 0;
 
+    // =========================
     // BUDGET REMAINING
+    // =========================
 
     const budgetRemaining =
       monthlyBudget - monthlyTotal;
 
+    // =========================
     // BUDGET EXCEEDED
+    // =========================
 
     const budgetExceeded =
       monthlyTotal > monthlyBudget &&

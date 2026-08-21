@@ -1,24 +1,12 @@
-import express from "express";
-
-import {
-  analyzeFinancialSpendingController,
-  askFinancialQuestionController,
-} from "../controllers/ai.controller.js";
-
-import authMiddleware from "../middleware/auth.middleware.js";
+import express from 'express';
+import { askQuestion, parseExpense, analyzeFinancialSpendingController } from '../controllers/ai.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
+import { requireAiQuota } from '../middleware/entitlement.middleware.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
-
-router.get(
-  "/spending-analysis",
-  analyzeFinancialSpendingController
-);
-
-router.post(
-  "/ask",
-  askFinancialQuestionController
-);
+router.get('/spending-analysis', protect, requireAiQuota, analyzeFinancialSpendingController);
+router.post('/ask', protect, requireAiQuota, askQuestion);
+router.post('/parse-expense', protect, requireAiQuota, parseExpense);
 
 export default router;

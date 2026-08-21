@@ -45,6 +45,7 @@ const incomeSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+incomeSchema.index({ user: 1, date: -1 });
 
 const IncomeModel = mongoose.model(
   "Income",
