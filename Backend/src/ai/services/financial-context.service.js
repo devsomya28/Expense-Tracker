@@ -5,7 +5,7 @@ export const buildFinancialContext = async (userId) => {
   try {
     // 1. Fetch pre-calculated deterministic facts
     const intelligence = await getFinancialIntelligence(userId);
-    const goals = await getUserGoals(userId); // Fetch deterministic goals
+    const goals = await getUserGoals(userId); // Fetch deterministic goals.
     const activeGoals = goals.filter(g => g.status === 'ACTIVE');
 
     // 2. Format context for the LLM
