@@ -78,6 +78,24 @@ const Dashboard = () => {
   const displayName = getDisplayName();
 
   /* =====================================
+      DYNAMIC GREETING
+  ====================================== */
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) {
+      return "Good morning";
+    }
+
+    if (hour >= 12 && hour < 17) {
+      return "Good afternoon";
+    }
+
+    return "Good evening";
+  };
+
+  /* =====================================
       FETCH DASHBOARD DATA
   ====================================== */
 
@@ -246,40 +264,38 @@ const Dashboard = () => {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 min-w-0">
+
       {/* =====================================
           HEADER
       ====================================== */}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
+
           <h1 className="text-2xl sm:text-3xl font-bold text-white truncate">
-            Good morning, {displayName}
+            {getGreeting()}, {displayName}
           </h1>
 
           <p className="text-zinc-500 text-sm mt-1">
             Here's your financial intelligence for{" "}
             {data.period?.month || "this month"}.
           </p>
+
         </div>
       </div>
 
       {/* ==================================================
           MAIN DASHBOARD AREA
-          
-          LEFT:
-            Financial Health
-            Stats
-
-          RIGHT:
-            Forecast
       ================================================== */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start min-w-0">
+
         {/* ==================================================
             LEFT COLUMN
         ================================================== */}
 
         <div className="min-w-0 flex flex-col gap-6">
+
           {/* ================================================
               FINANCIAL HEALTH
           ================================================= */}
@@ -299,6 +315,7 @@ const Dashboard = () => {
           ================================================= */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
+
             {/* INCOME */}
 
             <div className="min-w-0">
@@ -350,6 +367,7 @@ const Dashboard = () => {
                 iconTone="amber"
               />
             </div>
+
           </div>
         </div>
 
@@ -366,6 +384,7 @@ const Dashboard = () => {
             <ForecastCard />
           </FeatureLocked>
         </div>
+
       </div>
 
       {/* ==================================================
@@ -373,11 +392,13 @@ const Dashboard = () => {
       ================================================== */}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 min-w-0">
+
         {/* ==================================================
             LEFT / MAIN CONTENT
         ================================================== */}
 
         <div className="xl:col-span-2 flex flex-col gap-6 min-w-0">
+
           {/* ================================================
               PROACTIVE INSIGHTS
           ================================================= */}
@@ -401,6 +422,7 @@ const Dashboard = () => {
               budgetData={data.budget}
             />
           </div>
+
         </div>
 
         {/* ==================================================
@@ -408,6 +430,7 @@ const Dashboard = () => {
         ================================================== */}
 
         <div className="xl:col-span-1 flex flex-col gap-6 min-w-0">
+
           {/* ================================================
               AI COMMAND
           ================================================= */}
@@ -422,7 +445,9 @@ const Dashboard = () => {
 
           {topGoal ? (
             <div className="card p-5 sm:p-6 min-w-0 overflow-hidden">
+
               <div className="flex items-center justify-between gap-3 mb-4">
+
                 <h3 className="font-semibold text-white">
                   Priority Goal
                 </h3>
@@ -433,6 +458,7 @@ const Dashboard = () => {
                 >
                   View All
                 </Link>
+
               </div>
 
               <div className="min-w-0">
@@ -441,9 +467,12 @@ const Dashboard = () => {
                   compact
                 />
               </div>
+
             </div>
           ) : (
+
             <div className="card p-6 text-center flex flex-col items-center justify-center min-h-[200px]">
+
               <Target className="w-10 h-10 text-zinc-700 mb-3" />
 
               <p className="text-zinc-500 font-medium mb-3">
@@ -456,8 +485,10 @@ const Dashboard = () => {
               >
                 Create a Goal →
               </Link>
+
             </div>
           )}
+
         </div>
       </div>
 
@@ -466,13 +497,17 @@ const Dashboard = () => {
       ================================================== */}
 
       <div className="pt-6 border-t border-base-border">
+
         <div className="flex items-center justify-between mb-4">
+
           <h3 className="font-semibold text-white">
             Quick Navigation
           </h3>
+
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
           {/* TRANSACTIONS */}
 
           <Link
@@ -568,8 +603,10 @@ const Dashboard = () => {
 
             <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-brand transition shrink-0" />
           </Link>
+
         </div>
       </div>
+
     </div>
   );
 };
